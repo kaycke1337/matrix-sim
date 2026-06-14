@@ -37,6 +37,9 @@ export function Hud(): React.JSX.Element {
       <div>◷ tick {tick.toLocaleString("pt-BR")}</div>
       <div>☻ agentes: {agentCount}</div>
       <div style={{ opacity: 0.6 }}>▸ {fps} fps</div>
+      <div style={{ opacity: 0.45, fontSize: 11, marginTop: 4 }}>
+        clique num agente p/ ver o cérebro
+      </div>
     </div>
   );
 }

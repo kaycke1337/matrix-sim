@@ -13,6 +13,10 @@ export class SceneManager {
   private sun: THREE.DirectionalLight;
   private ambient: THREE.AmbientLight;
   private agentRenderer: AgentRenderer;
+  private raycaster = new THREE.Raycaster();
+  private pointer = new THREE.Vector2();
+  /** callback quando um agente é clicado (id) ou o vazio (null) */
+  onPick: (id: number | null) => void = () => {};
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -49,6 +53,30 @@ export class SceneManager {
 
     this.resize();
     addEventListener("resize", () => this.resize());
+
+    // clique para selecionar agente (distingue clique de arrasto da câmera)
+    let downX = 0;
+    let downY = 0;
+    canvas.addEventListener("pointerdown", (e) => {
+      downX = e.clientX;
+      downY = e.clientY;
+    });
+    canvas.addEventListener("pointerup", (e) => {
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 5) return; // foi arrasto
+      this.pointer.x = (e.clientX / innerWidth) * 2 - 1;
+      this.pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+      this.raycaster.setFromCamera(this.pointer, this.camera);
+      const hits = this.raycaster.intersectObjects(this.agentRenderer.pickables, false);
+      if (hits.length > 0) {
+        this.onPick(hits[0].object.userData.agentId as number);
+      } else {
+        this.onPick(null);
+      }
+    });
+  }
+
+  setSelected(id: number | null): void {
+    this.agentRenderer.selectedId = id;
   }
 
   private resize(): void {

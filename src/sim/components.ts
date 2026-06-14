@@ -1,45 +1,123 @@
+import type { Brain } from "./brain";
+
 /** Tipos de necessidade que motivam os agentes. */
 export type NeedKey = "energia" | "fome" | "social" | "diversao";
 
 export const NEED_KEYS: NeedKey[] = ["energia", "fome", "social", "diversao"];
 
 /** Estados da máquina de estados do agente. */
-export type FSM = "OCIOSO" | "INDO" | "USANDO" | "DORMINDO";
+export type FSM = "OCIOSO" | "INDO" | "USANDO" | "DORMINDO" | "SOCIALIZANDO";
 
-/** Vetor de posição no plano (y é altura, fixa para agentes). */
+/** Vetor de posição no plano. */
 export interface Vec2 {
   x: number;
   z: number;
 }
 
-/** Um Ponto de Interesse: satisfaz uma necessidade quando usado. */
+/**
+ * Personalidade — traços estáveis (estilo Big Five), em [0,1].
+ * Modulam decisões, recompensas e interações sociais.
+ */
+export interface Personality {
+  extroversao: number; // gosta de socializar
+  diligencia: number; // valoriza trabalho/dinheiro
+  neuroticismo: number; // sobe stress mais fácil
+  sociabilidade: number; // afinidade cresce mais rápido
+  ambicao: number; // busca riqueza
+}
+
+/** Estado emocional dinâmico, em [0,1] (exceto humor em [-1,1]). */
+export interface Emotion {
+  humor: number; // -1 (triste) .. 1 (feliz)
+  stress: number; // 0..1
+}
+
+/**
+ * Memória de relacionamento com outro agente.
+ * afinidade: -1 (rival) .. 1 (melhor amigo)
+ */
+export interface Relation {
+  afinidade: number;
+  encontros: number;
+  ultimoTick: number;
+}
+
+/** Profissões disponíveis (definem onde se trabalha e quanto paga). */
+export type Job = "barista" | "comerciante" | "artista" | "tecnico" | "desempregado";
+
+/** Tipos de ação que a rede neural pode escolher (índice = saída da rede). */
+export type ActionKind =
+  | "DORMIR"
+  | "COMER"
+  | "SOCIALIZAR"
+  | "DIVERTIR"
+  | "TRABALHAR"
+  | "VAGUEAR";
+
+export const ACTIONS: ActionKind[] = [
+  "DORMIR",
+  "COMER",
+  "SOCIALIZAR",
+  "DIVERTIR",
+  "TRABALHAR",
+  "VAGUEAR",
+];
+
+/** Um Ponto de Interesse. */
 export interface POI {
   id: string;
   label: string;
-  cell: Vec2; // célula da grade
-  satisfies: NeedKey;
-  /** quanto repõe por tick de uso (0..100) */
+  cell: Vec2;
+  /** que ação esse POI atende */
+  action: ActionKind;
+  /** necessidade que repõe (se houver) */
+  satisfies: NeedKey | null;
   rate: number;
-  /** cor para o render */
+  /** custo monetário por uso (negativo = paga, ex.: trabalho) */
+  cost: number;
   color: number;
 }
 
-/** Estado completo de um agente (entidade). */
+/** Estado completo de um agente. */
 export interface Agent {
   id: number;
   name: string;
   color: number;
-  /** posição contínua no mundo (em unidades de célula) */
+
   pos: Vec2;
-  /** posição anterior — usada para interpolar no render */
   prevPos: Vec2;
+
   needs: Record<NeedKey, number>;
+
+  // --- novos: cognição e vida interior ---
+  personality: Personality;
+  emotion: Emotion;
+  brain: Brain;
+  job: Job;
+  money: number;
+
+  // social
+  relations: Map<number, Relation>;
+  /** com quem está interagindo agora (id) */
+  partner: number | null;
+
+  // FSM / navegação
   fsm: FSM;
-  /** POI alvo atual */
+  currentAction: ActionKind | null;
   targetPoi: string | null;
-  /** caminho em células a percorrer */
   path: Vec2[];
   pathIndex: number;
-  /** timer de uso do POI (ticks restantes) */
   useTimer: number;
+
+  // --- aprendizado: rastros para a recompensa ---
+  /** ação escolhida na última decisão (índice) */
+  lastActionIdx: number;
+  /** percepção usada na última decisão */
+  lastPercept: number[];
+  /** bem-estar no momento da decisão (para calcular vantagem) */
+  lastWellbeing: number;
+  /** recompensa acumulada (telemetria) */
+  totalReward: number;
+  /** idade em ticks */
+  age: number;
 }

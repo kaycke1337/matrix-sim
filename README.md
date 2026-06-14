@@ -8,7 +8,8 @@ persistente habitado por agentes autônomos (regras + máquina de estados).
 ## Status
 
 - ✅ **Fase 0** — Esqueleto (Vite + TS + Three.js + React, loop de tick fixo, RNG semeado)
-- ✅ **Fase 1 (MVP)** — Agentes vivendo: necessidades → IA(utility/FSM) → A* → movimento → ação; ciclo dia/noite; HUD básico
+- ✅ **Fase 1 (MVP)** — Agentes vivendo: necessidades → IA → A* → movimento → ação; ciclo dia/noite; HUD
+- ✅ **IA Avançada** — cérebro neural por agente (MLP + REINFORCE), personalidade, emoções, vida social (amizades/rivalidades) e economia
 - ⬜ Fase 2 — Persistência + controle de tempo
 - ⬜ Fase 3 — Modo Arquiteto
 - ⬜ Fase 4 — SQLite + escala
@@ -32,12 +33,26 @@ npm run build    # build de produção
 ## Como funciona
 
 O **núcleo de simulação** (`src/sim/`) é TypeScript puro, sem Three.js, e avança
-o mundo em *ticks* de tamanho fixo (determinístico, com RNG semeado). A camada de
-**render** (`src/render/`) só lê o estado e desenha. Isso garante 60 FPS,
-save/load reprodutível e permite escalar o mundo sem reescrever a lógica.
+o mundo em *ticks* de tamanho fixo. A camada de **render** (`src/render/`) só lê
+o estado e desenha.
 
-- Agentes têm necessidades (energia, fome, social, diversão) que decaem.
-- A IA escolhe a necessidade mais urgente, acha um POI no mapa e vai até ele (A*).
-- Ao chegar, usa o POI e repõe a necessidade. À noite, dormem.
+### IA dos agentes (cérebro neural)
+
+Cada agente tem uma **mini rede neural** (`brain.ts`: MLP 13→16→6) treinada online
+por **REINFORCE** (policy gradient). A cada decisão:
+
+1. **Percebe** o mundo (necessidades, dinheiro, emoção, hora, vizinhança) → vetor de 13 números.
+2. A rede produz uma **política** sobre 6 ações (dormir, comer, socializar, divertir, trabalhar, vaguear).
+3. **Amostra** uma ação (explora) e age no mundo.
+4. **Aprende**: a recompensa é a variação do *bem-estar* — a rede reforça ações que melhoraram a vida do agente.
+
+Sobre isso há **personalidade** (5 traços estáveis que enviesam decisões),
+**emoções** (humor/stress dinâmicos), **vida social** (afinidade que cria amizades
+e rivalidades, com linhas visíveis no mundo) e **economia** (trabalho paga,
+consumo custa, dinheiro circula). Comportamento e dinâmicas sociais **emergem** —
+não são roteirizados.
+
+> Clique em qualquer agente para abrir o **inspetor**: ver o cérebro (recompensa),
+> personalidade, necessidades, emoções, dinheiro e relações.
 
 Estrutura completa em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
