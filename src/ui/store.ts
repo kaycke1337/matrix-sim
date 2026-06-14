@@ -34,6 +34,8 @@ interface HudState {
   dayPhase: number;
   agentCount: number;
   fps: number;
+  speed: number;
+  toast: string | null;
   selectedId: number | null;
   selected: AgentView | null;
   set: (s: Partial<HudState>) => void;
@@ -45,6 +47,8 @@ export const useHud = create<HudState>((set) => ({
   dayPhase: 0,
   agentCount: 0,
   fps: 0,
+  speed: 1,
+  toast: null,
   selectedId: null,
   selected: null,
   set: (s) => set(s),

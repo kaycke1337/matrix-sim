@@ -4,9 +4,19 @@ import { SceneManager } from "./render/scene";
 import { Engine } from "./engine/engine";
 import { Hud } from "./ui/Hud";
 import { AgentInspector } from "./ui/AgentInspector";
+import { ControlPanel } from "./ui/ControlPanel";
 import { useHud } from "./ui/store";
 import { toAgentView } from "./ui/selectors";
 import { dayPhase } from "./sim/world";
+import {
+  bindEngine,
+  startAutosave,
+  cycleSpeed,
+  togglePause,
+  quickSave,
+  quickLoad,
+} from "./engine/controls";
+import { loadLocal } from "./persistence/storage";
 
 // --- Canvas 3D ---
 const canvas = document.createElement("canvas");
@@ -50,6 +60,45 @@ const engine = new Engine((world, alpha) => {
 
 engine.start();
 
+bindEngine(engine);
+
+// retoma o último autosave automaticamente, se houver
+const resumed = loadLocal();
+if (resumed) {
+  engine.setWorld(resumed);
+}
+
+// autosave a cada 30s
+startAutosave(30000);
+
+// atalhos de teclado
+addEventListener("keydown", (e) => {
+  if (e.target instanceof HTMLInputElement) return;
+  switch (e.code) {
+    case "Space":
+      e.preventDefault();
+      togglePause();
+      break;
+    case "Equal":
+    case "ArrowUp":
+      cycleSpeed(1);
+      break;
+    case "Minus":
+    case "ArrowDown":
+      cycleSpeed(-1);
+      break;
+    case "KeyS":
+      quickSave();
+      break;
+    case "KeyL":
+      quickLoad();
+      break;
+    case "Escape":
+      useHud.getState().select(null);
+      break;
+  }
+});
+
 (window as unknown as { engine: Engine }).engine = engine;
 
 // --- HUD React (overlay) ---
@@ -63,5 +112,6 @@ createRoot(hudRoot).render(
   <StrictMode>
     <Hud />
     <AgentInspector />
+    <ControlPanel />
   </StrictMode>
 );

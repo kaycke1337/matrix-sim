@@ -28,6 +28,17 @@ export class Engine {
     this.running = false;
   }
 
+  /** Substitui o mundo atual (load / reset). Zera o acumulador. */
+  setWorld(world: World): void {
+    this.world = world;
+    this.acc = 0;
+  }
+
+  /** Cria um mundo novo do zero (reset) com a seed dada. */
+  reset(seed = 1337): void {
+    this.setWorld(createWorld(seed));
+  }
+
   private frame = (now: number): void => {
     if (!this.running) return;
     let dt = now - this.last;

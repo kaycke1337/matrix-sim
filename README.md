@@ -10,7 +10,7 @@ persistente habitado por agentes autônomos (regras + máquina de estados).
 - ✅ **Fase 0** — Esqueleto (Vite + TS + Three.js + React, loop de tick fixo, RNG semeado)
 - ✅ **Fase 1 (MVP)** — Agentes vivendo: necessidades → IA → A* → movimento → ação; ciclo dia/noite; HUD
 - ✅ **IA Avançada** — cérebro neural por agente (MLP + REINFORCE), personalidade, emoções, vida social (amizades/rivalidades) e economia
-- ⬜ Fase 2 — Persistência + controle de tempo
+- ✅ **Fase 2** — Persistência (salvar/carregar mundo + pesos das redes) e controles de tempo (pausar/1×/2×/4×/8×, autosave)
 - ⬜ Fase 3 — Modo Arquiteto
 - ⬜ Fase 4 — SQLite + escala
 - ⬜ Fase 5 — Modo Avatar
@@ -54,5 +54,22 @@ não são roteirizados.
 
 > Clique em qualquer agente para abrir o **inspetor**: ver o cérebro (recompensa),
 > personalidade, necessidades, emoções, dinheiro e relações.
+
+### Controles (Fase 2)
+
+Barra inferior e atalhos de teclado:
+
+| Ação | Atalho |
+|------|--------|
+| Pausar / retomar | `Espaço` |
+| Acelerar / desacelerar (⏸/1×/2×/4×/8×) | `↑` / `↓` (ou `+` / `-`) |
+| Salvar rápido (localStorage) | `S` |
+| Carregar rápido | `L` |
+| Desselecionar agente | `Esc` |
+
+Também há botões para **exportar/importar** o mundo como arquivo `.json` e gerar
+um **mundo novo** (✨). O estado é **autossalvo a cada 30s** e retomado
+automaticamente ao reabrir. O save inclui **os pesos das redes neurais**, então
+os agentes continuam exatamente com o que aprenderam.
 
 Estrutura completa em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
