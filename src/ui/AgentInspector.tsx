@@ -52,6 +52,8 @@ export function AgentInspector(): React.JSX.Element | null {
       </div>
       <div style={{ opacity: 0.65, marginBottom: 6, fontSize: 11 }}>
         deslocamento: {a.travelMode === "TRANSITO" ? "transporte" : "a pé"} · {a.transitPhase} · viagens {a.transitRides}
+        {a.transitVehicleId ? ` · veic. ${a.transitVehicleId}` : ""}
+        {a.transitPhase === "WAITING" ? ` · espera ${a.transitWaitTicks}` : ""}
       </div>
 
       <div style={{ opacity: 0.6, fontSize: 10, marginBottom: 2 }}>NECESSIDADES</div>

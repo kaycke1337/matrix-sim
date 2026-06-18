@@ -120,6 +120,8 @@ function goToPoi(
   agent.travelMode = "CAMINHANDO";
   agent.transitPhase = "NONE";
   agent.transitDestination = null;
+  agent.transitVehicleId = null;
+  agent.transitWaitTicks = 0;
   agent.partner = null;
   agent.fsm = path.length > 0 ? "INDO" : "SOCIALIZANDO";
 }
@@ -134,5 +136,7 @@ function interrupt(agent: Agent): void {
   agent.travelMode = "CAMINHANDO";
   agent.transitPhase = "NONE";
   agent.transitDestination = null;
+  agent.transitVehicleId = null;
+  agent.transitWaitTicks = 0;
   agent.partner = null;
 }

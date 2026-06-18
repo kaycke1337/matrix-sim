@@ -251,7 +251,7 @@ Cada fase entrega algo **rodável** e testável.
 - Expandir o mapa de quarteirão para distrito/cidade com zonas residenciais,
   comércio, serviços públicos e espaços cívicos.
 - Adicionar veículos e mobilidade urbana (rotas, congestionamento simples,
-  transporte público futuro).
+  transporte público com embarque em veículos).
 - Transformar POIs em lojas/instituições com estoque, preços, empregos e donos.
 - Chat local simbólico entre agentes, com memória social persistente.
 - Eleições periódicas: candidatos, propostas, voto por preferência e efeitos de
@@ -264,7 +264,9 @@ Cada fase entrega algo **rodável** e testável.
   políticas públicas com efeitos mensuráveis: impostos, orçamento, assistência
   social, subsídio de transporte e apoio ao estoque/preço das lojas. Agentes em
   trajetos longos já podem usar transporte subsidiado, caminhando até uma parada
-  antes de embarcar, com custo, orçamento e tempo de deslocamento afetados.
+  antes de esperar e embarcar em um veículo próximo; o inspetor mostra fase,
+  espera e veículo associado, com custo, orçamento e tempo de deslocamento
+  afetados.
   Eleições agora têm campanha, propostas
   explícitas, voto por alinhamento de plataforma e aprovação do governo que
   influencia incumbentes. Dormir usa a própria residência e convivência em casa
@@ -293,6 +295,7 @@ Cada fase entrega algo **rodável** e testável.
 ## 8. Próximo passo
 
 Avançar a **Fase 7** por incrementos. Já feito: mercado de trabalho dinâmico
-(salários, demissões e contratação/troca de emprego em `labor.ts`). A seguir:
-desembarque visual em veículos, contratos de trabalho com prazo/rescisão e
-cadeias produtivas mais ricas (insumos → produtos, múltiplos elos).
+(salários, demissões e contratação/troca de emprego em `labor.ts`) e transporte
+com caminhada até parada, espera e embarque em veículo rastreado. A seguir:
+desembarque visual no destino, contratos de trabalho com prazo/rescisão e cadeias
+produtivas mais ricas (insumos → produtos, múltiplos elos).

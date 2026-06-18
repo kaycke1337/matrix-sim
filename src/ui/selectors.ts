@@ -30,6 +30,8 @@ export function toAgentView(world: World, a: Agent): AgentView {
     action: a.currentAction,
     travelMode: a.travelMode,
     transitPhase: a.transitPhase,
+    transitVehicleId: a.transitVehicleId,
+    transitWaitTicks: a.transitWaitTicks,
     transitRides: a.transitRides,
     needs: { ...a.needs },
     personality: { ...a.personality },

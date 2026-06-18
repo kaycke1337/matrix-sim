@@ -14,6 +14,8 @@ import { wellbeing, clamp } from "./reward";
 
 const MOVE_SPEED = 0.12;
 const ARRIVE_EPS = 0.05;
+const TRANSIT_BOARD_RADIUS = 3.5;
+const TRANSIT_MAX_WAIT_TICKS = 220;
 
 const DECAY: Record<NeedKey, number> = {
   energia: 0.05,
@@ -125,7 +127,12 @@ export function movementSystem(world: World): void {
     const wp = a.path[a.pathIndex];
     if (!wp) {
       if (a.transitPhase === "WALK_TO_STOP" && a.transitDestination) {
-        boardTransit(a);
+        a.transitPhase = "WAITING";
+        a.path = [];
+        a.pathIndex = 0;
+      }
+      if (a.transitPhase === "WAITING" && a.transitDestination) {
+        tryBoardTransit(world, a);
         continue;
       }
       const poi = POIS.find((p) => p.id === a.targetPoi);
@@ -336,6 +343,8 @@ function maybeUseTransit(
   a.travelMode = "CAMINHANDO";
   a.transitPhase = "WALK_TO_STOP";
   a.transitDestination = { ...destinationPoi.cell };
+  a.transitVehicleId = null;
+  a.transitWaitTicks = 0;
   a.transitRides++;
   a.emotion.stress = clamp(a.emotion.stress - 0.02, 0, 1);
 
@@ -351,7 +360,17 @@ function maybeUseTransit(
   return stopPath;
 }
 
-function boardTransit(a: Agent): void {
+function tryBoardTransit(world: World, a: Agent): void {
+  const vehicle = nearestTransitVehicle(world, a.pos);
+  a.transitWaitTicks++;
+  if (!vehicle && a.transitWaitTicks < TRANSIT_MAX_WAIT_TICKS) {
+    a.prevPos = { ...a.pos };
+    return;
+  }
+  boardTransit(a, vehicle?.id ?? nearestVehicleId(world, a.pos));
+}
+
+function boardTransit(a: Agent, vehicleId: number | null): void {
   if (!a.transitDestination) {
     resetTransit(a);
     return;
@@ -363,6 +382,8 @@ function boardTransit(a: Agent): void {
   }
   a.travelMode = "TRANSITO";
   a.transitPhase = "RIDING";
+  a.transitVehicleId = vehicleId;
+  a.transitWaitTicks = 0;
   a.path = ridePath;
   a.pathIndex = 0;
 }
@@ -371,6 +392,34 @@ function resetTransit(a: Agent): void {
   a.travelMode = "CAMINHANDO";
   a.transitPhase = "NONE";
   a.transitDestination = null;
+  a.transitVehicleId = null;
+  a.transitWaitTicks = 0;
+}
+
+function nearestTransitVehicle(world: World, pos: Agent["pos"]): World["vehicles"][number] | null {
+  let best: World["vehicles"][number] | null = null;
+  let bestDist = Infinity;
+  for (const vehicle of world.vehicles) {
+    const dist = Math.hypot(vehicle.pos.x - pos.x, vehicle.pos.z - pos.z);
+    if (dist <= TRANSIT_BOARD_RADIUS && dist < bestDist) {
+      best = vehicle;
+      bestDist = dist;
+    }
+  }
+  return best;
+}
+
+function nearestVehicleId(world: World, pos: Agent["pos"]): number | null {
+  let bestId: number | null = null;
+  let bestDist = Infinity;
+  for (const vehicle of world.vehicles) {
+    const dist = Math.hypot(vehicle.pos.x - pos.x, vehicle.pos.z - pos.z);
+    if (dist < bestDist) {
+      bestId = vehicle.id;
+      bestDist = dist;
+    }
+  }
+  return bestId;
 }
 
 function nearestTransitStop(pos: Agent["pos"]): POI | null {

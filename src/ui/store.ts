@@ -21,6 +21,8 @@ export interface AgentView {
   action: ActionKind | null;
   travelMode: string;
   transitPhase: string;
+  transitVehicleId: number | null;
+  transitWaitTicks: number;
   transitRides: number;
   needs: { energia: number; fome: number; social: number; diversao: number };
   personality: {

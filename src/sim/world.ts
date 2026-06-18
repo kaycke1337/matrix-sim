@@ -365,6 +365,8 @@ export function spawnAgent(world: World): Agent {
     travelMode: "CAMINHANDO",
     transitPhase: "NONE",
     transitDestination: null,
+    transitVehicleId: null,
+    transitWaitTicks: 0,
     transitRides: 0,
     lastActionIdx: -1,
     lastPercept: [],

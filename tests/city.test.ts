@@ -115,8 +115,21 @@ describe("Cidade e instituições", () => {
       step(world);
       guard++;
     }
+    expect(agent.transitPhase).toBe("WAITING");
+    expect(agent.travelMode).toBe("CAMINHANDO");
+
+    const vehicle = world.vehicles[0];
+    vehicle.pos = { ...agent.pos };
+    vehicle.prevPos = { ...agent.pos };
+    step(world);
+
     expect(agent.transitPhase).toBe("RIDING");
     expect(agent.travelMode).toBe("TRANSITO");
+    expect(agent.transitVehicleId).toBe(vehicle.id);
+
+    const ridingSave = deserializeWorld(serializeWorld(world));
+    expect(ridingSave.agents[0].transitVehicleId).toBe(vehicle.id);
+    expect(ridingSave.agents[0].transitWaitTicks).toBe(0);
   });
 
   it("agentes trabalham no próprio vínculo e recebem salário institucional", () => {

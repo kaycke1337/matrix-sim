@@ -106,8 +106,8 @@ subsídio de transporte e apoio ao mercado. Essas políticas movem orçamento
 público, repõem estoque, reduzem stress de moradores pobres, alteram a velocidade
 do tráfego e mudam a aprovação para a próxima eleição. Há também **veículos
 autônomos** circulando por rotas urbanas persistentes; agentes em trajetos longos
-podem pagar tarifa subsidiada, caminhar até uma parada e embarcar em modo de
-deslocamento por transporte.
+podem pagar tarifa subsidiada, caminhar até uma parada, esperar um veículo
+próximo e embarcar com o veículo rastreado no inspetor.
 Comportamento e dinâmicas sociais **emergem** — não são roteirizados.
 
 > Clique em qualquer agente para abrir o **inspetor**: ver o cérebro (recompensa),
