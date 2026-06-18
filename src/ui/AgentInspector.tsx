@@ -51,7 +51,7 @@ export function AgentInspector(): React.JSX.Element | null {
         casa: {a.home ?? "sem moradia"} · família {a.householdSize}
       </div>
       <div style={{ opacity: 0.65, marginBottom: 6, fontSize: 11 }}>
-        deslocamento: {a.travelMode === "TRANSITO" ? "transporte" : "a pé"} · viagens {a.transitRides}
+        deslocamento: {a.travelMode === "TRANSITO" ? "transporte" : "a pé"} · {a.transitPhase} · viagens {a.transitRides}
       </div>
 
       <div style={{ opacity: 0.6, fontSize: 10, marginBottom: 2 }}>NECESSIDADES</div>

@@ -77,8 +77,8 @@ export function decisionSystem(world: World): void {
     if (path.length === 0) {
       startUsing(a, poi);
     } else {
-      maybeUseTransit(world, a, path);
-      a.path = path;
+      const transitPath = maybeUseTransit(world, a, poi, path);
+      a.path = transitPath ?? path;
       a.pathIndex = 0;
       a.fsm = "INDO";
     }
@@ -124,6 +124,10 @@ export function movementSystem(world: World): void {
 
     const wp = a.path[a.pathIndex];
     if (!wp) {
+      if (a.transitPhase === "WALK_TO_STOP" && a.transitDestination) {
+        boardTransit(a);
+        continue;
+      }
       const poi = POIS.find((p) => p.id === a.targetPoi);
       if (poi) startUsing(a, poi);
       else a.fsm = "OCIOSO";
@@ -172,7 +176,7 @@ export function actionSystem(world: World): void {
       a.targetPoi = null;
       a.path = [];
       a.pathIndex = 0;
-      a.travelMode = "CAMINHANDO";
+      resetTransit(a);
     }
   }
 }
@@ -237,7 +241,7 @@ function payOwnerDividend(
 // ---- helpers ----
 
 function startUsing(a: Agent, poi: POI): void {
-  a.travelMode = "CAMINHANDO";
+  resetTransit(a);
   if (poi.action === "DORMIR") a.fsm = "DORMINDO";
   else if (poi.action === "SOCIALIZAR") a.fsm = "SOCIALIZANDO";
   else a.fsm = "USANDO";
@@ -280,40 +284,58 @@ function wander(world: World, a: Agent): void {
     a.path = path;
     a.pathIndex = 0;
     a.targetPoi = null;
-    a.travelMode = "CAMINHANDO";
+    resetTransit(a);
     a.fsm = "INDO";
   } else {
     a.fsm = "OCIOSO";
   }
 }
 
-function maybeUseTransit(world: World, a: Agent, path: Agent["path"]): void {
+function maybeUseTransit(
+  world: World,
+  a: Agent,
+  destinationPoi: POI,
+  path: Agent["path"]
+): Agent["path"] | null {
   if (path.length < 24 || world.vehicles.length === 0) {
-    a.travelMode = "CAMINHANDO";
-    return;
+    resetTransit(a);
+    return null;
   }
   const subsidy = world.civics.policy.transitSubsidy;
   if (subsidy < 0.2) {
-    a.travelMode = "CAMINHANDO";
-    return;
+    resetTransit(a);
+    return null;
   }
 
   const baseFare = 4;
   const fare = Math.max(1, Math.round(baseFare * (1 - subsidy * 0.7)));
   if (a.money < fare) {
-    a.travelMode = "CAMINHANDO";
-    return;
+    resetTransit(a);
+    return null;
   }
 
   const publicCost = Math.max(0, baseFare - fare);
   if (world.civics.budget < publicCost) {
-    a.travelMode = "CAMINHANDO";
-    return;
+    resetTransit(a);
+    return null;
+  }
+
+  const stop = nearestTransitStop(a.pos);
+  if (!stop) {
+    resetTransit(a);
+    return null;
+  }
+  const stopPath = findPath(a.pos, stop.cell);
+  if (stopPath.length === 0) {
+    resetTransit(a);
+    return null;
   }
 
   a.money -= fare;
   world.civics.budget -= publicCost;
-  a.travelMode = "TRANSITO";
+  a.travelMode = "CAMINHANDO";
+  a.transitPhase = "WALK_TO_STOP";
+  a.transitDestination = { ...destinationPoi.cell };
   a.transitRides++;
   a.emotion.stress = clamp(a.emotion.stress - 0.02, 0, 1);
 
@@ -326,6 +348,43 @@ function maybeUseTransit(world: World, a: Agent, path: Agent["path"]): void {
       topic: "sistema",
     });
   }
+  return stopPath;
+}
+
+function boardTransit(a: Agent): void {
+  if (!a.transitDestination) {
+    resetTransit(a);
+    return;
+  }
+  const ridePath = findPath(a.pos, a.transitDestination);
+  if (ridePath.length === 0) {
+    resetTransit(a);
+    return;
+  }
+  a.travelMode = "TRANSITO";
+  a.transitPhase = "RIDING";
+  a.path = ridePath;
+  a.pathIndex = 0;
+}
+
+function resetTransit(a: Agent): void {
+  a.travelMode = "CAMINHANDO";
+  a.transitPhase = "NONE";
+  a.transitDestination = null;
+}
+
+function nearestTransitStop(pos: Agent["pos"]): POI | null {
+  let best: POI | null = null;
+  let bestDist = Infinity;
+  for (const poi of POIS) {
+    if (poi.kind !== "transporte") continue;
+    const dist = Math.hypot(poi.cell.x - pos.x, poi.cell.z - pos.z);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = poi;
+    }
+  }
+  return best;
 }
 
 function useTicksFor(currentVal: number): number {

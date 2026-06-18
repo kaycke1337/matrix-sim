@@ -10,6 +10,8 @@ export type FSM = "OCIOSO" | "INDO" | "USANDO" | "DORMINDO" | "SOCIALIZANDO";
 
 export type TravelMode = "CAMINHANDO" | "TRANSITO";
 
+export type TransitPhase = "NONE" | "WALK_TO_STOP" | "RIDING";
+
 /** Vetor de posição no plano. */
 export interface Vec2 {
   x: number;
@@ -123,6 +125,8 @@ export interface Agent {
   pathIndex: number;
   useTimer: number;
   travelMode: TravelMode;
+  transitPhase: TransitPhase;
+  transitDestination: Vec2 | null;
   transitRides: number;
 
   // --- aprendizado: rastros para a recompensa ---

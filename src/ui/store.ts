@@ -20,6 +20,7 @@ export interface AgentView {
   fsm: FSM;
   action: ActionKind | null;
   travelMode: string;
+  transitPhase: string;
   transitRides: number;
   needs: { energia: number; fome: number; social: number; diversao: number };
   personality: {

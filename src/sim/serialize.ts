@@ -52,6 +52,8 @@ interface AgentData {
   pathIndex: number;
   useTimer: number;
   travelMode?: Agent["travelMode"];
+  transitPhase?: Agent["transitPhase"];
+  transitDestination?: { x: number; z: number } | null;
   transitRides?: number;
   lastActionIdx: number;
   lastPercept: number[];
@@ -136,6 +138,8 @@ function serializeAgent(a: Agent): AgentData {
     pathIndex: a.pathIndex,
     useTimer: a.useTimer,
     travelMode: a.travelMode,
+    transitPhase: a.transitPhase,
+    transitDestination: a.transitDestination ? { ...a.transitDestination } : null,
     transitRides: a.transitRides,
     lastActionIdx: a.lastActionIdx,
     lastPercept: [...a.lastPercept],
@@ -258,6 +262,8 @@ function deserializeAgent(d: AgentData): Agent {
     pathIndex: d.pathIndex,
     useTimer: d.useTimer,
     travelMode: d.travelMode ?? "CAMINHANDO",
+    transitPhase: d.transitPhase ?? "NONE",
+    transitDestination: d.transitDestination ? { ...d.transitDestination } : null,
     transitRides: d.transitRides ?? 0,
     lastActionIdx: d.lastActionIdx,
     lastPercept: [...d.lastPercept],

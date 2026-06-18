@@ -263,8 +263,9 @@ Cada fase entrega algo **rodável** e testável.
   candidatos emergentes por traços/capital social, prefeito exibido no HUD e
   políticas públicas com efeitos mensuráveis: impostos, orçamento, assistência
   social, subsídio de transporte e apoio ao estoque/preço das lojas. Agentes em
-  trajetos longos já podem usar transporte subsidiado, com custo, orçamento e
-  tempo de deslocamento afetados. Eleições agora têm campanha, propostas
+  trajetos longos já podem usar transporte subsidiado, caminhando até uma parada
+  antes de embarcar, com custo, orçamento e tempo de deslocamento afetados.
+  Eleições agora têm campanha, propostas
   explícitas, voto por alinhamento de plataforma e aprovação do governo que
   influencia incumbentes. Dormir usa a própria residência e convivência em casa
   fortalece relações familiares. Trabalho gera produção no empregador e uma
@@ -293,6 +294,5 @@ Cada fase entrega algo **rodável** e testável.
 
 Avançar a **Fase 7** por incrementos. Já feito: mercado de trabalho dinâmico
 (salários, demissões e contratação/troca de emprego em `labor.ts`). A seguir:
-deslocamento com embarque/desembarque físico no transporte, contratos de
-trabalho com prazo/rescisão e cadeias produtivas mais ricas (insumos →
-produtos, múltiplos elos).
+desembarque visual em veículos, contratos de trabalho com prazo/rescisão e
+cadeias produtivas mais ricas (insumos → produtos, múltiplos elos).
