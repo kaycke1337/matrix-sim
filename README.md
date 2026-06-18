@@ -1,9 +1,24 @@
 # Matrix-Sim
 
-Simulação 3D no navegador inspirada no filme *Matrix*: um quarteirão pequeno e
-persistente habitado por agentes autônomos (regras + máquina de estados).
+[![CI](https://github.com/kaycke1337/matrix-sim/actions/workflows/ci.yml/badge.svg)](https://github.com/kaycke1337/matrix-sim/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue.svg)](https://www.typescriptlang.org/)
+
+Autonomous 3D civilization simulation running in the browser. Matrix-Sim models
+agents with needs, online learning, social memory, institutions, elections,
+transport, housing, labor, and a local SQLite WASM save.
 
 > Documento de visão e arquitetura: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
+
+## Highlights
+
+- Deterministic TypeScript simulation core, independent from rendering.
+- Three.js renderer with instanced agents and vehicles.
+- Mini neural policy per agent (MLP + REINFORCE) with personality and emotions.
+- Persistent SQLite WASM snapshots with OPFS/IndexedDB fallback.
+- Civil systems: housing, families, stores, jobs, wages, supply chain, local chat,
+  elections, public budget, taxes, welfare, transit subsidy, and approval.
+- Headless Vitest coverage for simulation, persistence, politics, labor, and city systems.
 
 ## Status
 
@@ -29,6 +44,31 @@ Outros comandos:
 ```bash
 npm test         # testes do núcleo (determinismo)
 npm run build    # build de produção
+npm run verify   # typecheck + testes + build
+```
+
+## Stack
+
+- TypeScript, React, Zustand
+- Three.js
+- Vite
+- sql.js / SQLite WASM
+- Vitest
+
+## Quality
+
+The simulation core is intentionally separated from rendering:
+
+- `src/sim/`: deterministic world state and systems
+- `src/render/`: Three.js projection of the world state
+- `src/ui/`: React HUD and controls
+- `src/persistence/`: JSON and SQLite WASM persistence
+
+Public release checks:
+
+```bash
+npm audit --omit=dev
+npm run verify
 ```
 
 ## Como funciona

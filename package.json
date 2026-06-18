@@ -2,13 +2,38 @@
   "name": "matrix-sim",
   "private": true,
   "version": "0.1.0",
+  "description": "Browser-based autonomous civilization simulation built with TypeScript, React, Three.js and SQLite WASM.",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaycke1337/matrix-sim.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kaycke1337/matrix-sim/issues"
+  },
+  "homepage": "https://github.com/kaycke1337/matrix-sim#readme",
+  "keywords": [
+    "simulation",
+    "civilization",
+    "agents",
+    "reinforcement-learning",
+    "threejs",
+    "sqlite-wasm",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -21,9 +46,9 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@types/three": "^0.169.0",
-    "@vitejs/plugin-react": "^4.3.2",
-    "typescript": "^5.6.2",
-    "vite": "^5.4.8",
-    "vitest": "^2.1.2"
+    "@vitejs/plugin-react": "^6.0.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9"
   }
 }
