@@ -44,6 +44,15 @@ export function AgentInspector(): React.JSX.Element | null {
       <div style={{ opacity: 0.75, marginBottom: 6, fontSize: 11 }}>
         {a.job} · 💰 {a.money.toFixed(0)} · idade {Math.floor(a.age / 100)} · {a.action ?? a.fsm}
       </div>
+      <div style={{ opacity: 0.65, marginBottom: 4, fontSize: 11 }}>
+        trabalho: {a.workplace ?? "sem vínculo"}
+      </div>
+      <div style={{ opacity: 0.65, marginBottom: 4, fontSize: 11 }}>
+        casa: {a.home ?? "sem moradia"} · família {a.householdSize}
+      </div>
+      <div style={{ opacity: 0.65, marginBottom: 6, fontSize: 11 }}>
+        deslocamento: {a.travelMode === "TRANSITO" ? "transporte" : "a pé"} · viagens {a.transitRides}
+      </div>
 
       <div style={{ opacity: 0.6, fontSize: 10, marginBottom: 2 }}>NECESSIDADES</div>
       <Bar label="energia" v={a.needs.energia} color="#3a9ea5" />

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { buildWorldMesh } from "./world-mesh";
 import { AgentRenderer } from "./agents";
+import { VehicleRenderer } from "./vehicles";
 import { dayPhase, type World } from "../sim/world";
 
 /** Encapsula a cena Three.js, câmera, luzes e o ciclo dia/noite. */
@@ -13,6 +14,7 @@ export class SceneManager {
   private sun: THREE.DirectionalLight;
   private ambient: THREE.AmbientLight;
   private agentRenderer: AgentRenderer;
+  private vehicleRenderer: VehicleRenderer;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   /** callback quando um agente é clicado (id) ou o vazio (null) */
@@ -25,15 +27,16 @@ export class SceneManager {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x05080a);
-    this.scene.fog = new THREE.Fog(0x05080a, 25, 55);
+    this.scene.fog = new THREE.Fog(0x05080a, 45, 95);
 
     this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
-    this.camera.position.set(18, 18, 18);
+    this.camera.position.set(34, 32, 34);
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
     this.controls.maxPolarAngle = Math.PI / 2.1;
     this.controls.target.set(0, 0, 0);
+    this.controls.maxDistance = 85;
 
     this.ambient = new THREE.AmbientLight(0x335544, 0.6);
     this.scene.add(this.ambient);
@@ -50,6 +53,7 @@ export class SceneManager {
 
     buildWorldMesh(this.scene);
     this.agentRenderer = new AgentRenderer(this.scene);
+    this.vehicleRenderer = new VehicleRenderer(this.scene);
 
     this.resize();
     addEventListener("resize", () => this.resize());
@@ -68,7 +72,7 @@ export class SceneManager {
       this.raycaster.setFromCamera(this.pointer, this.camera);
       const hits = this.raycaster.intersectObjects(this.agentRenderer.pickables, false);
       if (hits.length > 0) {
-        this.onPick(hits[0].object.userData.agentId as number);
+        this.onPick(this.agentRenderer.agentIdFromHit(hits[0]));
       } else {
         this.onPick(null);
       }
@@ -107,6 +111,7 @@ export class SceneManager {
     (this.scene.fog as THREE.Fog).color = sky;
 
     this.agentRenderer.sync(world, alpha);
+    this.vehicleRenderer.sync(world, alpha);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }

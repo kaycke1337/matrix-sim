@@ -8,6 +8,8 @@ export const NEED_KEYS: NeedKey[] = ["energia", "fome", "social", "diversao"];
 /** Estados da máquina de estados do agente. */
 export type FSM = "OCIOSO" | "INDO" | "USANDO" | "DORMINDO" | "SOCIALIZANDO";
 
+export type TravelMode = "CAMINHANDO" | "TRANSITO";
+
 /** Vetor de posição no plano. */
 export interface Vec2 {
   x: number;
@@ -63,11 +65,20 @@ export const ACTIONS: ActionKind[] = [
   "VAGUEAR",
 ];
 
+export type PoiKind =
+  | "residencia"
+  | "loja"
+  | "trabalho"
+  | "lazer"
+  | "civico"
+  | "transporte";
+
 /** Um Ponto de Interesse. */
 export interface POI {
   id: string;
   label: string;
   cell: Vec2;
+  kind: PoiKind;
   /** que ação esse POI atende */
   action: ActionKind;
   /** necessidade que repõe (se houver) */
@@ -95,6 +106,9 @@ export interface Agent {
   brain: Brain;
   job: Job;
   money: number;
+  homePoiId: string | null;
+  householdId: number | null;
+  workplacePoiId: string | null;
 
   // social
   relations: Map<number, Relation>;
@@ -108,6 +122,8 @@ export interface Agent {
   path: Vec2[];
   pathIndex: number;
   useTimer: number;
+  travelMode: TravelMode;
+  transitRides: number;
 
   // --- aprendizado: rastros para a recompensa ---
   /** ação escolhida na última decisão (índice) */

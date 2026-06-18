@@ -15,10 +15,21 @@ export function toAgentView(world: World, a: Agent): AgentView {
     id: a.id,
     name: a.name,
     job: a.job,
+    workplace:
+      world.institutions.find((institution) => institution.poiId === a.workplacePoiId)
+        ?.name ?? null,
+    home:
+      world.households.find((household) => household.id === a.householdId)?.name ??
+      null,
+    householdSize:
+      world.households.find((household) => household.id === a.householdId)?.members
+        .length ?? 0,
     money: a.money,
     age: a.age,
     fsm: a.fsm,
     action: a.currentAction,
+    travelMode: a.travelMode,
+    transitRides: a.transitRides,
     needs: { ...a.needs },
     personality: { ...a.personality },
     emotion: { ...a.emotion },

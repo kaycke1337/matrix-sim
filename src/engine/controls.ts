@@ -3,10 +3,17 @@ import { useHud } from "../ui/store";
 import {
   downloadWorld,
   uploadWorld,
-  saveLocal,
-  loadLocal,
-  hasLocal,
+  savePersistent,
+  loadPersistent,
+  hasPersistent,
 } from "../persistence/storage";
+import {
+  addAgent,
+  addAgents,
+  injectEvent,
+  removeAgent,
+  type ArchitectEvent,
+} from "../sim/architect";
 
 /**
  * Ponte entre a UI React e o Engine (que vive fora do React).
@@ -24,6 +31,16 @@ function toast(msg: string): void {
   setTimeout(() => {
     if (useHud.getState().toast === msg) useHud.getState().set({ toast: null });
   }, 2200);
+}
+
+function pulseGlitch(): void {
+  const glitchUntil = Date.now() + 520;
+  useHud.getState().set({ glitchUntil });
+  setTimeout(() => {
+    if (useHud.getState().glitchUntil === glitchUntil) {
+      useHud.getState().set({ glitchUntil: 0 });
+    }
+  }, 540);
 }
 
 export const SPEEDS = [0, 1, 2, 4, 8] as const;
@@ -67,19 +84,22 @@ export async function loadFromFile(): Promise<void> {
 
 export function quickSave(): void {
   if (!engine) return;
-  toast(saveLocal(engine.world) ? "💾 salvo (local)" : "⚠ falha ao salvar");
+  void savePersistent(engine.world).then((ok) => {
+    toast(ok ? "mundo salvo em SQLite" : "falha ao salvar");
+  });
 }
 
 export function quickLoad(): void {
   if (!engine) return;
-  const w = loadLocal();
-  if (w) {
-    engine.setWorld(w);
-    useHud.getState().select(null);
-    toast(`📂 autosave carregado (tick ${w.clock.tick})`);
-  } else {
-    toast("⚠ nenhum autosave");
-  }
+  void loadPersistent().then((w) => {
+    if (w) {
+      engine?.setWorld(w);
+      useHud.getState().select(null);
+      toast(`SQLite carregado (tick ${w.clock.tick})`);
+    } else {
+      toast("nenhum autosave");
+    }
+  });
 }
 
 export function resetWorld(): void {
@@ -90,14 +110,51 @@ export function resetWorld(): void {
   toast("✨ novo mundo gerado");
 }
 
-export function hasAutosave(): boolean {
-  return hasLocal();
+export function architectAddAgent(): void {
+  if (!engine) return;
+  const agent = addAgent(engine.world);
+  useHud.getState().select(agent.id);
+  pulseGlitch();
+  toast(`agente criado: ${agent.name}`);
+}
+
+export function architectAddAgents(count: number): void {
+  if (!engine) return;
+  const agents = addAgents(engine.world, count);
+  const last = agents.at(-1);
+  if (last) useHud.getState().select(last.id);
+  pulseGlitch();
+  toast(`${agents.length} agentes criados`);
+}
+
+export function architectRemoveAgent(): void {
+  if (!engine) return;
+  const selectedId = useHud.getState().selectedId;
+  const agent = removeAgent(engine.world, selectedId ?? undefined);
+  if (!agent) {
+    toast("nenhum agente para remover");
+    return;
+  }
+  if (selectedId === agent.id) useHud.getState().select(null);
+  pulseGlitch();
+  toast(`agente removido: ${agent.name}`);
+}
+
+export function architectInjectEvent(event: ArchitectEvent): void {
+  if (!engine) return;
+  injectEvent(engine.world, event);
+  pulseGlitch();
+  toast(event === "BLECAUTE" ? "blecaute injetado" : "festa na praça injetada");
+}
+
+export function hasAutosave(): Promise<boolean> {
+  return hasPersistent();
 }
 
 /** Liga autosave periódico (ms). */
 export function startAutosave(everyMs = 30000): void {
   if (autosaveTimer) clearInterval(autosaveTimer);
   autosaveTimer = setInterval(() => {
-    if (engine) saveLocal(engine.world);
+    if (engine) void savePersistent(engine.world);
   }, everyMs);
 }

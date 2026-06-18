@@ -26,7 +26,23 @@ const panel: React.CSSProperties = {
 };
 
 export function Hud(): React.JSX.Element {
-  const { tick, dayPhase, agentCount, fps } = useHud();
+  const {
+    tick,
+    dayPhase,
+    agentCount,
+    fps,
+    mayorName,
+    nextElectionIn,
+    publicBudget,
+    taxRate,
+    approval,
+    campaignCount,
+    institutionCount,
+    institutionCash,
+    vehicleCount,
+    householdCount,
+    chat,
+  } = useHud();
   const night = dayPhase < 0.25 || dayPhase > 0.8;
   return (
     <div style={panel}>
@@ -36,7 +52,34 @@ export function Hud(): React.JSX.Element {
       <div>⏱ {phaseToClock(dayPhase)} {night ? "🌙 noite" : "☀ dia"}</div>
       <div>◷ tick {tick.toLocaleString("pt-BR")}</div>
       <div>☻ agentes: {agentCount}</div>
+      <div>
+        ▤ instituições: {institutionCount} · caixa {institutionCash.toFixed(0)}
+      </div>
+      <div>⌂ domicílios: {householdCount}</div>
+      <div>▰ veículos: {vehicleCount}</div>
+      <div>⚖ prefeito: {mayorName ?? "sem eleição"}</div>
+      <div style={{ opacity: 0.72 }}>
+        orçamento {publicBudget.toFixed(0)} · imposto {(taxRate * 100).toFixed(0)}%
+      </div>
+      <div style={{ opacity: 0.72 }}>
+        aprovação {(approval * 100).toFixed(0)}% · campanha {campaignCount}
+      </div>
+      <div style={{ opacity: 0.65 }}>
+        urna em {nextElectionIn.toLocaleString("pt-BR")} ticks
+      </div>
       <div style={{ opacity: 0.6 }}>▸ {fps} fps</div>
+      {chat.length > 0 && (
+        <div style={{ marginTop: 6, maxWidth: 260 }}>
+          {chat.map((message) => (
+            <div
+              key={`${message.tick}-${message.speakerName}-${message.text}`}
+              style={{ opacity: 0.72, fontSize: 11, lineHeight: 1.35 }}
+            >
+              {message.speakerName}: {message.text}
+            </div>
+          ))}
+        </div>
+      )}
       <div style={{ opacity: 0.45, fontSize: 11, marginTop: 4 }}>
         clique num agente p/ ver o cérebro
       </div>

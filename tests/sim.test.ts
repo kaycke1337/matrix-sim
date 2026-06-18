@@ -60,6 +60,21 @@ describe("Simulação determinística", () => {
     );
     expect(moved).toBe(true);
   });
+
+  it("suporta uma população maior sem quebrar invariantes básicos", () => {
+    const w = createWorld(8080, 150);
+    for (let i = 0; i < 250; i++) step(w);
+
+    expect(w.agents).toHaveLength(150);
+    for (const a of w.agents) {
+      expect(Number.isFinite(a.pos.x)).toBe(true);
+      expect(Number.isFinite(a.pos.z)).toBe(true);
+      expect(a.needs.energia).toBeGreaterThanOrEqual(0);
+      expect(a.needs.fome).toBeGreaterThanOrEqual(0);
+      expect(a.needs.social).toBeGreaterThanOrEqual(0);
+      expect(a.needs.diversao).toBeGreaterThanOrEqual(0);
+    }
+  });
 });
 
 function serialize(w: ReturnType<typeof createWorld>) {

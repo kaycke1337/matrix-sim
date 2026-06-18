@@ -1,5 +1,20 @@
 import type { Agent, Relation } from "./components";
-import type { World } from "./world";
+import type {
+  ChatMessage,
+  CivicState,
+  Household,
+  Institution,
+  Vehicle,
+  World,
+} from "./world";
+import {
+  assignAgentHousehold,
+  assignInitialWorkplaces,
+  createInitialCivics,
+  createInitialHouseholds,
+  createInitialInstitutions,
+  createInitialVehicles,
+} from "./world";
 import { RNG } from "./rng";
 import { Brain, type BrainData } from "./brain";
 
@@ -25,6 +40,9 @@ interface AgentData {
   brain: BrainData;
   job: Agent["job"];
   money: number;
+  homePoiId?: string | null;
+  householdId?: number | null;
+  workplacePoiId?: string | null;
   relations: RelationEntry[];
   partner: number | null;
   fsm: Agent["fsm"];
@@ -33,6 +51,8 @@ interface AgentData {
   path: { x: number; z: number }[];
   pathIndex: number;
   useTimer: number;
+  travelMode?: Agent["travelMode"];
+  transitRides?: number;
   lastActionIdx: number;
   lastPercept: number[];
   lastWellbeing: number;
@@ -47,6 +67,11 @@ export interface WorldData {
   rngState: number;
   nextId: number;
   stats: World["stats"];
+  civics?: CivicState;
+  institutions?: Institution[];
+  chat?: ChatMessage[];
+  vehicles?: Vehicle[];
+  households?: Household[];
   agents: AgentData[];
 }
 
@@ -59,6 +84,25 @@ export function serializeWorld(world: World, savedAt = ""): WorldData {
     rngState: world.rng.state,
     nextId: world.nextId,
     stats: { ...world.stats },
+    civics: {
+      ...world.civics,
+      lastResults: world.civics.lastResults.map((r) => ({ ...r })),
+    },
+    institutions: world.institutions.map((institution) => ({
+      ...institution,
+      employees: [...institution.employees],
+    })),
+    households: world.households.map((household) => ({
+      ...household,
+      members: [...household.members],
+    })),
+    chat: world.chat.map((message) => ({ ...message })),
+    vehicles: world.vehicles.map((vehicle) => ({
+      ...vehicle,
+      pos: { ...vehicle.pos },
+      prevPos: { ...vehicle.prevPos },
+      route: vehicle.route.map((point) => ({ ...point })),
+    })),
     agents: world.agents.map(serializeAgent),
   };
 }
@@ -80,6 +124,9 @@ function serializeAgent(a: Agent): AgentData {
     brain: a.brain.toJSON(),
     job: a.job,
     money: a.money,
+    homePoiId: a.homePoiId,
+    householdId: a.householdId,
+    workplacePoiId: a.workplacePoiId,
     relations,
     partner: a.partner,
     fsm: a.fsm,
@@ -88,6 +135,8 @@ function serializeAgent(a: Agent): AgentData {
     path: a.path.map((p) => ({ ...p })),
     pathIndex: a.pathIndex,
     useTimer: a.useTimer,
+    travelMode: a.travelMode,
+    transitRides: a.transitRides,
     lastActionIdx: a.lastActionIdx,
     lastPercept: [...a.lastPercept],
     lastWellbeing: a.lastWellbeing,
@@ -105,14 +154,78 @@ export function deserializeWorld(data: WorldData): World {
   }
   const rng = new RNG(1);
   rng.state = data.rngState;
+  const defaultCivics = createInitialCivics();
 
   const world: World = {
     clock: { tick: data.tick },
     agents: data.agents.map(deserializeAgent),
     rng,
     nextId: data.nextId,
-    stats: { ...data.stats },
+    stats: {
+      nascimentos: data.stats.nascimentos,
+      mortes: data.stats.mortes,
+      eleicoes: data.stats.eleicoes ?? 0,
+    },
+    civics: data.civics
+      ? {
+          ...defaultCivics,
+          ...data.civics,
+          policy: {
+            ...defaultCivics.policy,
+            ...data.civics.policy,
+          },
+          lastResults: data.civics.lastResults.map((r) => ({
+            ...r,
+            proposal: {
+              ...defaultCivics.policy,
+              ...(r.proposal ?? data.civics?.policy),
+            },
+          })),
+          activeProposals: (data.civics.activeProposals ?? []).map((proposal) => ({
+            ...proposal,
+            policy: {
+              ...defaultCivics.policy,
+              ...proposal.policy,
+            },
+          })),
+        }
+      : createInitialCivics(),
+    institutions: [],
+    households: [],
+    chat: data.chat ? data.chat.map((message) => ({ ...message })) : [],
+    vehicles: data.vehicles
+      ? data.vehicles.map((vehicle) => ({
+          ...vehicle,
+          pos: { ...vehicle.pos },
+          prevPos: { ...vehicle.prevPos },
+          route: vehicle.route.map((point) => ({ ...point })),
+        }))
+      : createInitialVehicles(),
   };
+  world.institutions = data.institutions
+    ? data.institutions.map((institution) => ({
+        ...institution,
+        wage: institution.wage ?? 0,
+        employees: [...(institution.employees ?? [])],
+      }))
+    : createInitialInstitutions(world);
+  world.households = data.households
+    ? data.households.map((household) => ({
+        ...household,
+        members: [...household.members],
+      }))
+    : createInitialHouseholds(world);
+  for (const agent of world.agents) {
+    if (agent.homePoiId == null || agent.householdId == null) {
+      assignAgentHousehold(world, agent);
+    }
+  }
+  // Saves a partir da Fase 7 carregam `institutions`, e nesse caso o estado de
+  // emprego é autoritativo — inclusive o desemprego (workplacePoiId == null).
+  // Só re-atribuímos para migrar saves legados que não traziam instituições.
+  if (!data.institutions && world.agents.some((agent) => agent.workplacePoiId == null)) {
+    assignInitialWorkplaces(world);
+  }
   return world;
 }
 
@@ -133,6 +246,9 @@ function deserializeAgent(d: AgentData): Agent {
     brain: Brain.fromJSON(d.brain),
     job: d.job,
     money: d.money,
+    homePoiId: d.homePoiId ?? null,
+    householdId: d.householdId ?? null,
+    workplacePoiId: d.workplacePoiId ?? null,
     relations,
     partner: d.partner,
     fsm: d.fsm,
@@ -141,6 +257,8 @@ function deserializeAgent(d: AgentData): Agent {
     path: d.path.map((p) => ({ ...p })),
     pathIndex: d.pathIndex,
     useTimer: d.useTimer,
+    travelMode: d.travelMode ?? "CAMINHANDO",
+    transitRides: d.transitRides ?? 0,
     lastActionIdx: d.lastActionIdx,
     lastPercept: [...d.lastPercept],
     lastWellbeing: d.lastWellbeing,

@@ -9,10 +9,16 @@ import { cellToWorld } from "../sim/map";
  */
 export class AgentRenderer {
   private group = new THREE.Group();
-  private meshes = new Map<number, THREE.Mesh>();
+  private agentsMesh: THREE.InstancedMesh | null = null;
+  private instanceAgentIds: number[] = [];
+  private capacity = 0;
   private ring: THREE.Mesh; // anel de seleção
   private relLines: THREE.LineSegments;
   private relGeo = new THREE.BufferGeometry();
+  private tempMatrix = new THREE.Matrix4();
+  private tempQuat = new THREE.Quaternion();
+  private tempScale = new THREE.Vector3(1, 1, 1);
+  private tempColor = new THREE.Color();
   selectedId: number | null = null;
 
   constructor(scene: THREE.Scene) {
@@ -35,48 +41,48 @@ export class AgentRenderer {
 
   /** Lista de malhas para o raycaster. */
   get pickables(): THREE.Object3D[] {
-    return [...this.meshes.values()];
+    return this.agentsMesh ? [this.agentsMesh] : [];
+  }
+
+  agentIdFromHit(hit: THREE.Intersection): number | null {
+    if (hit.object !== this.agentsMesh || hit.instanceId == null) return null;
+    return this.instanceAgentIds[hit.instanceId] ?? null;
   }
 
   sync(world: World, alpha: number): void {
-    const seen = new Set<number>();
     const posOf = new Map<number, THREE.Vector3>();
+    this.ensureCapacity(world.agents.length);
+    if (!this.agentsMesh) return;
 
-    for (const a of world.agents) {
-      seen.add(a.id);
-      let mesh = this.meshes.get(a.id);
-      if (!mesh) {
-        mesh = new THREE.Mesh(
-          new THREE.CapsuleGeometry(0.22, 0.5, 4, 8),
-          new THREE.MeshStandardMaterial({ color: a.color })
-        );
-        mesh.castShadow = true;
-        mesh.userData.agentId = a.id;
-        this.group.add(mesh);
-        this.meshes.set(a.id, mesh);
-      }
+    this.agentsMesh.count = world.agents.length;
+    this.instanceAgentIds = [];
+
+    for (let i = 0; i < world.agents.length; i++) {
+      const a = world.agents[i];
+      this.instanceAgentIds[i] = a.id;
       const ix = a.prevPos.x + (a.pos.x - a.prevPos.x) * alpha;
       const iz = a.prevPos.z + (a.pos.z - a.prevPos.z) * alpha;
       const w = cellToWorld({ x: ix, z: iz });
-      mesh.position.set(w.x, 0.5, w.z);
-      posOf.set(a.id, new THREE.Vector3(w.x, 0.5, w.z));
 
+      let y = 0.5;
       if (a.fsm === "DORMINDO") {
-        mesh.rotation.z = Math.PI / 2;
-        mesh.position.y = 0.25;
+        this.tempQuat.setFromEuler(new THREE.Euler(0, 0, Math.PI / 2));
+        y = 0.25;
       } else {
-        mesh.rotation.z = 0;
+        this.tempQuat.identity();
       }
-    }
 
-    for (const [id, mesh] of this.meshes) {
-      if (!seen.has(id)) {
-        this.group.remove(mesh);
-        mesh.geometry.dispose();
-        (mesh.material as THREE.Material).dispose();
-        this.meshes.delete(id);
-      }
+      this.tempMatrix.compose(
+        new THREE.Vector3(w.x, y, w.z),
+        this.tempQuat,
+        this.tempScale
+      );
+      this.agentsMesh.setMatrixAt(i, this.tempMatrix);
+      this.agentsMesh.setColorAt(i, this.tempColor.setHex(a.color));
+      posOf.set(a.id, new THREE.Vector3(w.x, y, w.z));
     }
+    this.agentsMesh.instanceMatrix.needsUpdate = true;
+    if (this.agentsMesh.instanceColor) this.agentsMesh.instanceColor.needsUpdate = true;
 
     // anel de seleção
     if (this.selectedId != null && posOf.has(this.selectedId)) {
@@ -88,6 +94,25 @@ export class AgentRenderer {
     }
 
     this.updateRelationLines(world, posOf);
+  }
+
+  private ensureCapacity(count: number): void {
+    if (this.agentsMesh && count <= this.capacity) return;
+
+    if (this.agentsMesh) {
+      this.group.remove(this.agentsMesh);
+      this.agentsMesh.geometry.dispose();
+      (this.agentsMesh.material as THREE.Material).dispose();
+    }
+
+    this.capacity = Math.max(16, nextPowerOfTwo(count));
+    this.agentsMesh = new THREE.InstancedMesh(
+      new THREE.CapsuleGeometry(0.22, 0.5, 4, 8),
+      new THREE.MeshStandardMaterial({ vertexColors: true }),
+      this.capacity
+    );
+    this.agentsMesh.castShadow = true;
+    this.group.add(this.agentsMesh);
   }
 
   /** Desenha linhas entre agentes com relação significativa. */
@@ -116,4 +141,10 @@ export class AgentRenderer {
     this.relGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
     this.relGeo.computeBoundingSphere();
   }
+}
+
+function nextPowerOfTwo(n: number): number {
+  let p = 1;
+  while (p < n) p *= 2;
+  return p;
 }

@@ -1,5 +1,5 @@
 import type { Agent, Relation } from "./components";
-import type { World } from "./world";
+import { pushChat, type World } from "./world";
 import { clamp } from "./reward";
 
 const INTERACT_RADIUS = 2.2;
@@ -20,21 +20,45 @@ function getRelation(a: Agent, otherId: number): Relation {
  */
 export function socialSystem(world: World): void {
   const agents = world.agents;
-  for (let i = 0; i < agents.length; i++) {
-    const a = agents[i];
-    for (let j = i + 1; j < agents.length; j++) {
-      const b = agents[j];
-      const d = Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z);
-      if (d > INTERACT_RADIUS) continue;
+  const buckets = new Map<string, Agent[]>();
 
-      // só interagem de fato se ao menos um quer socializar
-      const querem =
-        a.currentAction === "SOCIALIZAR" || b.currentAction === "SOCIALIZAR";
-      if (!querem) continue;
+  for (const agent of agents) {
+    const key = bucketKey(agent);
+    let bucket = buckets.get(key);
+    if (!bucket) {
+      bucket = [];
+      buckets.set(key, bucket);
+    }
+    bucket.push(agent);
+  }
 
-      interact(world, a, b);
+  for (const a of agents) {
+    const bx = Math.floor(a.pos.x / INTERACT_RADIUS);
+    const bz = Math.floor(a.pos.z / INTERACT_RADIUS);
+    for (let dz = -1; dz <= 1; dz++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const bucket = buckets.get(`${bx + dx},${bz + dz}`);
+        if (!bucket) continue;
+
+        for (const b of bucket) {
+          if (a.id >= b.id) continue;
+          const d = Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z);
+          if (d > INTERACT_RADIUS) continue;
+
+          // só interagem de fato se ao menos um quer socializar
+          const querem =
+            a.currentAction === "SOCIALIZAR" || b.currentAction === "SOCIALIZAR";
+          if (!querem) continue;
+
+          interact(world, a, b);
+        }
+      }
     }
   }
+}
+
+function bucketKey(agent: Agent): string {
+  return `${Math.floor(agent.pos.x / INTERACT_RADIUS)},${Math.floor(agent.pos.z / INTERACT_RADIUS)}`;
 }
 
 function interact(world: World, a: Agent, b: Agent): void {
@@ -76,6 +100,23 @@ function interact(world: World, a: Agent, b: Agent): void {
   // repõe necessidade social
   a.needs.social = clamp(a.needs.social + 1.2, 0, 100);
   b.needs.social = clamp(b.needs.social + 1.2, 0, 100);
+
+  if ((ra.encontros + rb.encontros + tick) % 23 === 0) {
+    pushChat(world, {
+      tick,
+      speakerId: a.id,
+      speakerName: a.name,
+      text: phraseFor(a, b, ra.afinidade),
+      topic: "social",
+    });
+  }
+}
+
+function phraseFor(a: Agent, b: Agent, affinity: number): string {
+  if (affinity > 0.35) return `combinou planos com ${b.name}`;
+  if (affinity < -0.25) return `discutiu com ${b.name}`;
+  if (a.currentAction === "SOCIALIZAR") return `trocou noticias com ${b.name}`;
+  return `cumprimentou ${b.name}`;
 }
 
 function applyMood(a: Agent, afinidade: number): void {

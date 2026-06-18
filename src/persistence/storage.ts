@@ -1,5 +1,10 @@
 import type { World } from "../sim/world";
 import { serializeWorld, deserializeWorld, type WorldData } from "../sim/serialize";
+import {
+  hasWorldSqlite,
+  loadWorldSqlite,
+  saveWorldSqlite,
+} from "./sqlite";
 
 const LS_KEY = "matrix-sim:autosave";
 
@@ -51,6 +56,16 @@ export function saveLocal(world: World): boolean {
   }
 }
 
+/** Salva no backend persistente principal: SQLite WASM, com fallback localStorage. */
+export async function savePersistent(world: World): Promise<boolean> {
+  try {
+    return await saveWorldSqlite(world);
+  } catch (error) {
+    console.warn("Falha no save SQLite; usando localStorage.", error);
+    return saveLocal(world);
+  }
+}
+
 /** Carrega o autosave do localStorage, se houver. */
 export function loadLocal(): World | null {
   try {
@@ -62,9 +77,30 @@ export function loadLocal(): World | null {
   }
 }
 
+/** Carrega do SQLite. Se só houver save legado, migra para SQLite ao salvar. */
+export async function loadPersistent(): Promise<World | null> {
+  try {
+    const sqliteWorld = await loadWorldSqlite();
+    if (sqliteWorld) return sqliteWorld;
+  } catch (error) {
+    console.warn("Falha ao carregar SQLite; tentando localStorage.", error);
+  }
+  return loadLocal();
+}
+
 /** Existe um autosave salvo? */
 export function hasLocal(): boolean {
   return localStorage.getItem(LS_KEY) !== null;
+}
+
+/** Existe um save persistente salvo? */
+export async function hasPersistent(): Promise<boolean> {
+  try {
+    if (await hasWorldSqlite()) return true;
+  } catch {
+    // fall back below
+  }
+  return hasLocal();
 }
 
 /** Remove o autosave. */

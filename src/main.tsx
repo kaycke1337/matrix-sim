@@ -15,8 +15,12 @@ import {
   togglePause,
   quickSave,
   quickLoad,
+  architectAddAgent,
+  architectAddAgents,
+  architectRemoveAgent,
+  architectInjectEvent,
 } from "./engine/controls";
-import { loadLocal } from "./persistence/storage";
+import { loadPersistent } from "./persistence/storage";
 
 // --- Canvas 3D ---
 const canvas = document.createElement("canvas");
@@ -53,6 +57,24 @@ const engine = new Engine((world, alpha) => {
       dayPhase: dayPhase(world.clock),
       agentCount: world.agents.length,
       fps,
+      mayorName: world.civics.mayorName,
+      nextElectionIn: Math.max(0, world.civics.nextElectionTick - world.clock.tick),
+      publicBudget: world.civics.budget,
+      taxRate: world.civics.policy.taxRate,
+      approval: world.civics.approval,
+      campaignCount: world.civics.activeProposals.length,
+      institutionCount: world.institutions.length,
+      institutionCash: world.institutions.reduce(
+        (sum, institution) => sum + institution.cash,
+        0
+      ),
+      vehicleCount: world.vehicles.length,
+      householdCount: world.households.length,
+      chat: world.chat.slice(-4).map((message) => ({
+        tick: message.tick,
+        speakerName: message.speakerName,
+        text: message.text,
+      })),
       selected: selAgent ? toAgentView(world, selAgent) : null,
     });
   }
@@ -63,10 +85,9 @@ engine.start();
 bindEngine(engine);
 
 // retoma o último autosave automaticamente, se houver
-const resumed = loadLocal();
-if (resumed) {
-  engine.setWorld(resumed);
-}
+void loadPersistent().then((resumed) => {
+  if (resumed) engine.setWorld(resumed);
+});
 
 // autosave a cada 30s
 startAutosave(30000);
@@ -92,6 +113,20 @@ addEventListener("keydown", (e) => {
       break;
     case "KeyL":
       quickLoad();
+      break;
+    case "KeyA":
+      if (e.shiftKey) architectAddAgents(25);
+      else architectAddAgent();
+      break;
+    case "Delete":
+    case "Backspace":
+      architectRemoveAgent();
+      break;
+    case "KeyB":
+      architectInjectEvent("BLECAUTE");
+      break;
+    case "KeyP":
+      architectInjectEvent("FESTA_PRACA");
       break;
     case "Escape":
       useHud.getState().select(null);

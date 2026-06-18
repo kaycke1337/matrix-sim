@@ -225,11 +225,17 @@ Cada fase entrega algo **rodável** e testável.
 - Painel: pausar, mudar velocidade, **criar/remover agentes**, injetar eventos
   (ex.: "blecaute", "festa na praça"), inspecionar agente selecionado.
 - Efeito glitch ao interferir.
+- **Status:** implementado com comandos testáveis no Sim Core (`architect.ts`) e
+  controles/atalhos na HUD.
 - **Resultado:** você controla/edita o mundo.
 
 ### Fase 4 — SQLite + escala
 - Migrar persistência para SQLite WASM (OPFS); autosave periódico.
 - Otimizações p/ subir a contagem de agentes (instancing no Three.js).
+- **Status:** implementado com `sql.js`, arquivo SQLite persistido em OPFS
+  quando disponível, fallback para IndexedDB/localStorage, índice relacional de
+  agentes e renderização por `InstancedMesh`. O sistema social usa buckets
+  espaciais para evitar comparação global de todos os pares.
 - **Resultado:** base sólida e escalável.
 
 ### Fase 5 — Modo Avatar
@@ -240,6 +246,36 @@ Cada fase entrega algo **rodável** e testável.
 ### Fase 6 — Polimento Matrix
 - Code-rain no loading/HUD, paleta esverdeada nos menus, glitches,
   som ambiente opcional. Pequenas melhorias de mundo (mais POIs, props).
+
+### Fase 7 — Civilização
+- Expandir o mapa de quarteirão para distrito/cidade com zonas residenciais,
+  comércio, serviços públicos e espaços cívicos.
+- Adicionar veículos e mobilidade urbana (rotas, congestionamento simples,
+  transporte público futuro).
+- Transformar POIs em lojas/instituições com estoque, preços, empregos e donos.
+- Chat local simbólico entre agentes, com memória social persistente.
+- Eleições periódicas: candidatos, propostas, voto por preferência e efeitos de
+  política pública no mundo.
+- **Status:** iniciado com distrito 48×48, POIs urbanos tipados,
+  lojas/instituições com caixa/estoque/dono/empregados/salário/transações,
+  domicílios com moradores/aluguel/caixa compartilhado, veículos autônomos em
+  rotas urbanas persistentes, chat local persistente, eleição periódica,
+  candidatos emergentes por traços/capital social, prefeito exibido no HUD e
+  políticas públicas com efeitos mensuráveis: impostos, orçamento, assistência
+  social, subsídio de transporte e apoio ao estoque/preço das lojas. Agentes em
+  trajetos longos já podem usar transporte subsidiado, com custo, orçamento e
+  tempo de deslocamento afetados. Eleições agora têm campanha, propostas
+  explícitas, voto por alinhamento de plataforma e aprovação do governo que
+  influencia incumbentes. Dormir usa a própria residência e convivência em casa
+  fortalece relações familiares. Trabalho gera produção no empregador e uma
+  cadeia produtiva simples transfere estoque de instituições produtoras para
+  lojas/lazer com oferta baixa. O **mercado de trabalho é dinâmico**: salários
+  sobem em empregadores prósperos com vaga e caem quando o caixa não cobre a
+  folha; empregadores sem caixa demitem o funcionário menos produtivo (que vira
+  desempregado); desempregados são contratados e agentes ambiciosos trocam de
+  emprego por salários melhores — tudo determinístico e persistido no save.
+- **Resultado:** a simulação deixa de ser só rotina individual e passa a ter
+  dinâmica social, econômica e política de civilização.
 
 ---
 
@@ -255,5 +291,8 @@ Cada fase entrega algo **rodável** e testável.
 
 ## 8. Próximo passo
 
-Implementar a **Fase 0 (esqueleto)** e, na sequência, a **Fase 1 (MVP)**.
-Quando você aprovar este documento, começo a escrever o código.
+Avançar a **Fase 7** por incrementos. Já feito: mercado de trabalho dinâmico
+(salários, demissões e contratação/troca de emprego em `labor.ts`). A seguir:
+deslocamento com embarque/desembarque físico no transporte, contratos de
+trabalho com prazo/rescisão e cadeias produtivas mais ricas (insumos →
+produtos, múltiplos elos).

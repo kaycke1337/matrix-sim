@@ -1,6 +1,8 @@
 import { createWorld, TICK_MS, type World } from "../sim/world";
 import { step } from "../sim/step";
 
+const DEFAULT_APP_AGENTS = 48;
+
 /**
  * Loop com timestep fixo (determinístico) + acumulador.
  * O render recebe um `alpha` de interpolação entre ticks.
@@ -14,7 +16,7 @@ export class Engine {
   private running = false;
 
   constructor(onRender: (world: World, alpha: number) => void, seed = 1337) {
-    this.world = createWorld(seed);
+    this.world = createWorld(seed, DEFAULT_APP_AGENTS);
     this.onRender = onRender;
   }
 
@@ -36,7 +38,7 @@ export class Engine {
 
   /** Cria um mundo novo do zero (reset) com a seed dada. */
   reset(seed = 1337): void {
-    this.setWorld(createWorld(seed));
+    this.setWorld(createWorld(seed, DEFAULT_APP_AGENTS));
   }
 
   private frame = (now: number): void => {
